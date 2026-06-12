@@ -1,122 +1,96 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState } from "react";
+import type { ChangeEvent, SyntheticEvent } from "react";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [formData, setFormData] = useState({
+    title: "",
+    genre: "",
+    mood: "",
+    bpm: "",
+    key: "",
+  });
+
+    const [result, setResult] = useState<any>(null);
+
+  function handleChange(event: ChangeEvent<HTMLInputElement>) {
+    const { name, value } = event.target;
+
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  }
+
+  async function handleSubmit(event: SyntheticEvent) {
+    event.preventDefault();
+
+    const response = await fetch("http://127.0.0.1:8000/api/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...formData,
+        bpm: Number(formData.bpm),
+      }),
+    });
+
+    const data = await response.json();
+    setResult(data);
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <main style={{ maxWidth: "700px", margin: "40px auto", fontFamily: "Arial" }}>
+      <h1>AI Producer Assistant</h1>
+      <p>Generate a marketing kit for your beat.</p>
 
-      <div className="ticks"></div>
+      <form onSubmit={handleSubmit}>
+        <input name="title" placeholder="Beat title" onChange={handleChange} />
+        <input name="genre" placeholder="Genre" onChange={handleChange} />
+        <input name="mood" placeholder="Mood" onChange={handleChange} />
+        <input name="bpm" placeholder="BPM" onChange={handleChange} />
+        <input name="key" placeholder="Key" onChange={handleChange} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
+        <button type="submit">Generate Marketing Kit</button>
+      </form>
+
+      {result && (
+        <section>
+          <h2>Generated Marketing Kit</h2>
+
+          <h3>Beat Tags</h3>
           <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
+            {result.beat_tags.map((tag: string, index: number) => (
+              <li key={index}>{tag}</li>
+            ))}
           </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+          <h3>YouTube Titles</h3>
+          <ul>
+            {result.youtube_titles.map((title: string, index: number) => (
+              <li key={index}>{title}</li>
+            ))}
+          </ul>
+
+          <h3>Description</h3>
+          <p>{result.description}</p>
+
+          <h3>Artist Matches</h3>
+          <ul>
+            {result.artist_matches.map((artist: string, index: number) => (
+              <li key={index}>{artist}</li>
+            ))}
+          </ul>
+
+          <h3>Social Caption</h3>
+          <p>{result.social_caption}</p>
+
+          <h3>Cover Art Prompt</h3>
+          <p>{result.cover_art_prompt}</p>
+        </section>
+      )}
+    </main>
+  );
 }
 
-export default App
+export default App;
