@@ -1,6 +1,15 @@
-from fastapi import FastAPI
+import json
+import os
+
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from openai import OpenAI
 from pydantic import BaseModel
+
+load_dotenv()
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 app = FastAPI()
 
@@ -28,25 +37,45 @@ def root():
 
 @app.post("/api/generate")
 def generate_marketing_kit(beat: BeatInfo):
-    return {
-        "beat_tags": [
-            beat.genre,
-            beat.mood,
-            f"{beat.bpm} BPM",
-            beat.key,
-            "type beat",
-        ],
-        "youtube_titles": [
-            f"{beat.mood} {beat.genre} Type Beat - '{beat.title}'",
-            f"{beat.title} | {beat.genre} Type Beat",
-            f"{beat.mood} {beat.genre} Instrumental {beat.bpm} BPM",
-        ],
-        "description": f"'{beat.title}' is a {beat.mood.lower()} {beat.genre.lower()} beat in {beat.key} at {beat.bpm} BPM. Perfect for artists looking for a polished, modern sound.",
-        "artist_matches": [
-            "Future",
-            "Travis Scott",
-            "Metro Boomin",
-        ],
-        "social_caption": f"New {beat.genre} beat out now. {beat.mood} vibes. Tap in.",
-        "cover_art_prompt": f"A cinematic cover art design for a {beat.mood.lower()} {beat.genre.lower()} beat titled '{beat.title}', dark lighting, high contrast, professional album artwork style.",
-    }
+    try:
+        response = client.responses.create(
+            model="gpt-4.1-mini",
+            input=f"""
+You are an expert music marketing assistant for online beat producers.
+
+Generate a marketing kit for this beat:
+
+Title: {beat.title}
+Genre: {beat.genre}
+Mood: {beat.mood}
+BPM: {beat.bpm}
+Key: {beat.key}
+
+Return only valid JSON. Do not include markdown, explanations, or code blocks.
+
+Use this exact JSON structure:
+{{
+  "beat_tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
+  "youtube_titles": ["title1", "title2", "title3"],
+  "description": "description text",
+  "artist_matches": ["artist1", "artist2", "artist3"],
+  "social_caption": "caption text",
+  "cover_art_prompt": "cover art prompt text"
+}}
+""",
+        )
+
+        content = response.output_text.strip()
+
+        if content.startswith("```json"):
+            content = content.replace("```json", "").replace("```", "").strip()
+
+        if content.startswith("```"):
+            content = content.replace("```", "").strip()
+
+        return json.loads(content)
+
+    except Exception as error:
+        print("OpenAI generation error:", error)
+        print("Raw content:", content if "content" in locals() else "No content returned")
+        raise HTTPException(status_code=500, detail="Failed to generate marketing kit")
