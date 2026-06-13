@@ -12,6 +12,7 @@ type MarketingKit = {
 };
 
 function App() {
+  // Form state used to collect beat metadata from the user
   const [formData, setFormData] = useState({
     title: "",
     genre: "",
@@ -20,32 +21,65 @@ function App() {
     key: "",
   });
 
+  // Generated marketing kit returned by the backend
   const [result, setResult] = useState<MarketingKit | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     const { name, value } = event.target;
     setFormData({ ...formData, [name]: value });
   }
 
+  function isFormValid() {
+    return (
+      formData.title.trim() &&
+      formData.genre.trim() &&
+      formData.mood.trim() &&
+      formData.bpm.trim() &&
+      formData.key.trim()
+    );
+  }
+
+  // Handles communication with the FastAPI backend
   async function handleSubmit(event: SyntheticEvent) {
     event.preventDefault();
-    setIsLoading(true);
 
-    const response = await fetch("http://127.0.0.1:8000/api/generate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        ...formData,
-        bpm: Number(formData.bpm),
-      }),
-    });
+    if (!isFormValid()) {
+      setErrorMessage("Please fill out all fields before generating.");
+      return;
+    }
 
-    const data = await response.json();
-    setResult(data);
-    setIsLoading(false);
+    try {
+      setIsLoading(true);
+      setErrorMessage("");
+
+      const response = await fetch("http://127.0.0.1:8000/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...formData,
+          bpm: Number(formData.bpm),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate marketing kit.");
+      }
+
+      const data = await response.json();
+      setResult(data);
+    } catch {
+      setErrorMessage("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function copyToClipboard(text: string) {
+    await navigator.clipboard.writeText(text);
   }
 
   return (
@@ -99,6 +133,12 @@ function App() {
               <Input name="key" placeholder="Key, e.g. F Minor" onChange={handleChange} />
             </div>
 
+            {errorMessage && (
+              <p className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                {errorMessage}
+              </p>
+            )}
+
             <button
               type="submit"
               className="mt-6 w-full rounded-xl bg-blue-600 px-5 py-4 font-semibold transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
@@ -148,23 +188,29 @@ function App() {
               <ResultCard title="YouTube Titles">
                 <ul className="space-y-3 text-slate-300">
                   {result.youtube_titles.map((title, index) => (
-                    <li key={index}>• {title}</li>
+                    <li key={index} className="flex items-start justify-between gap-4">
+                      <span>• {title}</span>
+                      <CopyButton text={title} />
+                    </li>
                   ))}
                 </ul>
               </ResultCard>
 
               <ResultCard title="BeatStars Description">
                 <p className="leading-7 text-slate-300">{result.description}</p>
+                <CopyButton text={result.description} />
               </ResultCard>
 
               <ResultCard title="Social Caption">
                 <p className="leading-7 text-slate-300">{result.social_caption}</p>
+                <CopyButton text={result.social_caption} />
               </ResultCard>
 
               <ResultCard title="Cover Art Prompt">
                 <p className="leading-7 text-slate-300">
                   {result.cover_art_prompt}
                 </p>
+                <CopyButton text={result.cover_art_prompt} />
               </ResultCard>
             </div>
           </section>
@@ -172,6 +218,17 @@ function App() {
       </section>
     </main>
   );
+
+  function CopyButton({ text }: { text: string }) {
+    return (
+      <button
+        onClick={() => copyToClipboard(text)}
+        className="mt-4 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:border-blue-500 hover:text-blue-300"
+      >
+        Copy
+      </button>
+    );
+  }
 }
 
 function Input({
