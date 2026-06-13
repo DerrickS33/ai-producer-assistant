@@ -1,5 +1,15 @@
 import { useState } from "react";
 import type { ChangeEvent, SyntheticEvent } from "react";
+import "./App.css";
+
+type MarketingKit = {
+  beat_tags: string[];
+  youtube_titles: string[];
+  description: string;
+  artist_matches: string[];
+  social_caption: string;
+  cover_art_prompt: string;
+};
 
 function App() {
   const [formData, setFormData] = useState({
@@ -10,19 +20,17 @@ function App() {
     key: "",
   });
 
-    const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<MarketingKit | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     const { name, value } = event.target;
-
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData({ ...formData, [name]: value });
   }
 
   async function handleSubmit(event: SyntheticEvent) {
     event.preventDefault();
+    setIsLoading(true);
 
     const response = await fetch("http://127.0.0.1:8000/api/generate", {
       method: "POST",
@@ -37,59 +45,175 @@ function App() {
 
     const data = await response.json();
     setResult(data);
+    setIsLoading(false);
   }
 
   return (
-    <main style={{ maxWidth: "700px", margin: "40px auto", fontFamily: "Arial" }}>
-      <h1>AI Producer Assistant</h1>
-      <p>Generate a marketing kit for your beat.</p>
+    <main className="min-h-screen bg-[#080b14] text-white">
+      <section className="mx-auto max-w-6xl px-6 py-10">
+        <nav className="mb-16 flex items-center justify-between">
+          <div className="text-xl font-bold tracking-tight">
+            AI Producer Assistant
+          </div>
+          <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-sm text-blue-300">
+            MVP Demo
+          </span>
+        </nav>
 
-      <form onSubmit={handleSubmit}>
-        <input name="title" placeholder="Beat title" onChange={handleChange} />
-        <input name="genre" placeholder="Genre" onChange={handleChange} />
-        <input name="mood" placeholder="Mood" onChange={handleChange} />
-        <input name="bpm" placeholder="BPM" onChange={handleChange} />
-        <input name="key" placeholder="Key" onChange={handleChange} />
+        <div className="grid items-center gap-12 lg:grid-cols-2">
+          <div>
+            <p className="mb-4 text-sm font-semibold uppercase tracking-[0.3em] text-blue-400">
+              AI Marketing Kit Generator
+            </p>
 
-        <button type="submit">Generate Marketing Kit</button>
-      </form>
+            <h1 className="mb-6 text-5xl font-bold leading-tight md:text-6xl">
+              Turn your beat info into a full marketing kit.
+            </h1>
 
-      {result && (
-        <section>
-          <h2>Generated Marketing Kit</h2>
+            <p className="mb-8 max-w-xl text-lg leading-8 text-slate-400">
+              Generate beat tags, YouTube titles, artist matches, descriptions,
+              social captions, and cover art prompts from one simple form.
+            </p>
 
-          <h3>Beat Tags</h3>
-          <ul>
-            {result.beat_tags.map((tag: string, index: number) => (
-              <li key={index}>{tag}</li>
-            ))}
-          </ul>
+            <div className="grid max-w-xl grid-cols-3 gap-4">
+              <Stat label="Assets" value="6+" />
+              <Stat label="Stack" value="React" />
+              <Stat label="API" value="FastAPI" />
+            </div>
+          </div>
 
-          <h3>YouTube Titles</h3>
-          <ul>
-            {result.youtube_titles.map((title: string, index: number) => (
-              <li key={index}>{title}</li>
-            ))}
-          </ul>
+          <form
+            onSubmit={handleSubmit}
+            className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-blue-950/20 backdrop-blur"
+          >
+            <h2 className="mb-2 text-2xl font-semibold">Beat Information</h2>
+            <p className="mb-6 text-sm text-slate-400">
+              Enter the core details for your beat.
+            </p>
 
-          <h3>Description</h3>
-          <p>{result.description}</p>
+            <div className="space-y-4">
+              <Input name="title" placeholder="Beat title" onChange={handleChange} />
+              <Input name="genre" placeholder="Genre, e.g. Trap" onChange={handleChange} />
+              <Input name="mood" placeholder="Mood, e.g. Dark" onChange={handleChange} />
+              <Input name="bpm" placeholder="BPM, e.g. 140" onChange={handleChange} />
+              <Input name="key" placeholder="Key, e.g. F Minor" onChange={handleChange} />
+            </div>
 
-          <h3>Artist Matches</h3>
-          <ul>
-            {result.artist_matches.map((artist: string, index: number) => (
-              <li key={index}>{artist}</li>
-            ))}
-          </ul>
+            <button
+              type="submit"
+              className="mt-6 w-full rounded-xl bg-blue-600 px-5 py-4 font-semibold transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isLoading}
+            >
+              {isLoading ? "Generating..." : "Generate Marketing Kit"}
+            </button>
+          </form>
+        </div>
 
-          <h3>Social Caption</h3>
-          <p>{result.social_caption}</p>
+        {result && (
+          <section className="mt-16">
+            <div className="mb-8">
+              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-blue-400">
+                Generated Output
+              </p>
+              <h2 className="mt-3 text-3xl font-bold">Marketing Kit</h2>
+            </div>
 
-          <h3>Cover Art Prompt</h3>
-          <p>{result.cover_art_prompt}</p>
-        </section>
-      )}
+            <div className="grid gap-6 lg:grid-cols-2">
+              <ResultCard title="Beat Tags">
+                <div className="flex flex-wrap gap-2">
+                  {result.beat_tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="rounded-full bg-blue-500/10 px-3 py-1 text-sm text-blue-300"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </ResultCard>
+
+              <ResultCard title="Artist Matches">
+                <div className="flex flex-wrap gap-2">
+                  {result.artist_matches.map((artist, index) => (
+                    <span
+                      key={index}
+                      className="rounded-full bg-purple-500/10 px-3 py-1 text-sm text-purple-300"
+                    >
+                      {artist}
+                    </span>
+                  ))}
+                </div>
+              </ResultCard>
+
+              <ResultCard title="YouTube Titles">
+                <ul className="space-y-3 text-slate-300">
+                  {result.youtube_titles.map((title, index) => (
+                    <li key={index}>• {title}</li>
+                  ))}
+                </ul>
+              </ResultCard>
+
+              <ResultCard title="BeatStars Description">
+                <p className="leading-7 text-slate-300">{result.description}</p>
+              </ResultCard>
+
+              <ResultCard title="Social Caption">
+                <p className="leading-7 text-slate-300">{result.social_caption}</p>
+              </ResultCard>
+
+              <ResultCard title="Cover Art Prompt">
+                <p className="leading-7 text-slate-300">
+                  {result.cover_art_prompt}
+                </p>
+              </ResultCard>
+            </div>
+          </section>
+        )}
+      </section>
     </main>
+  );
+}
+
+function Input({
+  name,
+  placeholder,
+  onChange,
+}: {
+  name: string;
+  placeholder: string;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <input
+      name={name}
+      placeholder={placeholder}
+      onChange={onChange}
+      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+    />
+  );
+}
+
+function ResultCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6">
+      <h3 className="mb-4 text-xl font-semibold">{title}</h3>
+      {children}
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+      <p className="text-2xl font-bold">{value}</p>
+      <p className="text-sm text-slate-400">{label}</p>
+    </div>
   );
 }
 
