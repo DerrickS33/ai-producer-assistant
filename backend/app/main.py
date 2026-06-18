@@ -1,5 +1,9 @@
+import os
+import shutil
+import librosa
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import UploadFile, File
 
 from app.schemas.marketing import BeatInfo, MarketingKit
 from app.services.openai_service import generate_marketing_kit_with_ai
@@ -30,4 +34,29 @@ def generate_marketing_kit(beat: BeatInfo):
         raise HTTPException(
             status_code=500,
             detail="Failed to generate marketing kit",
+        )
+    
+@app.post("/api/analyze")
+async def analyze_audio(audio_file: UploadFile = File(...)):
+    try:
+        upload_dir = "temp_uploads"
+        os.makedirs(upload_dir, exist_ok=True)
+
+        file_path = os.path.join(upload_dir, audio_file.filename)
+
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(audio_file.file, buffer)
+
+        duration = librosa.get_duration(path=file_path)
+
+        return {
+            "filename": audio_file.filename,
+            "duration_seconds": round(duration, 2),
+        }
+
+    except Exception as error:
+        print("Audio analysis error:", error)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to analyze audio file",
         )
