@@ -1,3 +1,5 @@
+import { useState } from "react";
+import type { DragEvent } from "react";
 import type { AudioAnalysis } from "../types/audioAnalysis";
 
 type AudioUploadProps = {
@@ -13,8 +15,30 @@ function AudioUpload({
   errorMessage,
   onFileSelect,
 }: AudioUploadProps) {
+  const [isDragging, setIsDragging] = useState(false);
+
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
+
+    if (file) {
+      onFileSelect(file);
+    }
+  }
+
+  function handleDragOver(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault();
+    setIsDragging(true);
+  }
+
+  function handleDragLeave() {
+    setIsDragging(false);
+  }
+
+  function handleDrop(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault();
+    setIsDragging(false);
+
+    const file = event.dataTransfer.files?.[0];
 
     if (file) {
       onFileSelect(file);
@@ -31,16 +55,29 @@ function AudioUpload({
   }
 
   return (
-    <div className="mt-12 rounded-3xl border border-slate-800 bg-slate-900/80 p-6">
+    <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6">
       <h2 className="mb-2 text-2xl font-semibold">Audio Analysis</h2>
 
       <p className="mb-6 text-sm text-slate-400">
-        Upload an MP3 or WAV file to detect BPM, key, duration, and energy.
+        Drag and drop an MP3 or WAV file to detect BPM, key, duration, and energy.
       </p>
 
-      <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-slate-700 bg-slate-950 p-8 text-center transition hover:border-blue-500">
+      <label
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed p-8 text-center transition ${
+          isDragging
+            ? "border-blue-500 bg-blue-500/10"
+            : "border-slate-700 bg-slate-950 hover:border-blue-500"
+        }`}
+      >
         <span className="text-lg font-semibold">
-          {isAnalyzing ? "Analyzing audio..." : "Click to upload audio"}
+          {isAnalyzing
+            ? "Analyzing audio..."
+            : isDragging
+            ? "Drop your beat here"
+            : "Drag your beat here or click to upload"}
         </span>
 
         <span className="mt-2 text-sm text-slate-500">
@@ -64,7 +101,10 @@ function AudioUpload({
 
       {analysis && (
         <div className="mt-6 grid gap-4 md:grid-cols-4">
-          <AnalysisItem label="Duration" value={formatDuration(analysis.duration_seconds)} />
+          <AnalysisItem
+            label="Duration"
+            value={formatDuration(analysis.duration_seconds)}
+          />
           <AnalysisItem label="BPM" value={analysis.bpm.toString()} />
           <AnalysisItem label="Key" value={analysis.key} />
           <AnalysisItem label="Energy" value={analysis.energy} />

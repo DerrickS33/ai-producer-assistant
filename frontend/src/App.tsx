@@ -53,7 +53,11 @@ function App() {
       setIsLoading(true);
       setErrorMessage("");
 
-      const data = await generateMarketingKit(formData);
+      const data = await generateMarketingKit({
+      ...formData,
+      duration_seconds: analysis?.duration_seconds,
+      energy: analysis?.energy,
+    });
       setResult(data);
     } catch {
       setErrorMessage("Something went wrong. Please try again.");

@@ -11,6 +11,12 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
 def generate_marketing_kit_with_ai(beat: BeatInfo) -> MarketingKit:
+    duration_formatted = "Unknown"
+
+    if beat.duration_seconds:
+        minutes = int(beat.duration_seconds // 60)
+        seconds = int(beat.duration_seconds % 60)
+        duration_formatted = f"{minutes}:{seconds:02d}"
     response = client.responses.parse(
         model="gpt-4o-mini",
         input=[
@@ -32,6 +38,8 @@ Genre: {beat.genre}
 Mood: {beat.mood}
 BPM: {beat.bpm}
 Key: {beat.key}
+Duration: {duration_formatted}
+Energy: {beat.energy}
 
 Requirements:
 - Create 8-12 searchable beat tags.

@@ -7,6 +7,8 @@ class BeatInfo(BaseModel):
     mood: str
     bpm: int
     key: str
+    duration_seconds: float | None = None
+    energy: str | None = None
 
 
 class MarketingKit(BaseModel):

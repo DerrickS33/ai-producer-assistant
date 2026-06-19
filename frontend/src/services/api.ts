@@ -1,15 +1,17 @@
 import type { MarketingKit } from "../types/marketingKit";
 
-type BeatFormData = {
+type GenerateMarketingKitData = {
   title: string;
   genre: string;
   mood: string;
   bpm: string;
   key: string;
+  duration_seconds?: number;
+  energy?: string;
 };
 
 export async function generateMarketingKit(
-  formData: BeatFormData
+  formData: GenerateMarketingKitData
 ): Promise<MarketingKit> {
   const response = await fetch("http://127.0.0.1:8000/api/generate", {
     method: "POST",
@@ -22,12 +24,12 @@ export async function generateMarketingKit(
       mood: formData.mood,
       bpm: Number(formData.bpm),
       key: formData.key,
+      duration_seconds: formData.duration_seconds,
+      energy: formData.energy,
     }),
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    console.error("API error:", errorData);
     throw new Error("Failed to generate marketing kit");
   }
 
