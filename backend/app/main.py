@@ -35,7 +35,31 @@ def generate_marketing_kit(beat: BeatInfo):
             status_code=500,
             detail="Failed to generate marketing kit",
         )
-    
+def estimate_key(y, sr):
+    chroma = librosa.feature.chroma_cqt(y=y, sr=sr)
+    chroma_mean = chroma.mean(axis=1)
+
+    notes = [
+        "C", "C#", "D", "D#", "E", "F",
+        "F#", "G", "G#", "A", "A#", "B"
+    ]
+
+    major_profile = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88]
+    minor_profile = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17]
+
+    scores = []
+
+    for i in range(12):
+        major_score = sum(chroma_mean[j] * major_profile[(j - i) % 12] for j in range(12))
+        minor_score = sum(chroma_mean[j] * minor_profile[(j - i) % 12] for j in range(12))
+
+        scores.append((major_score, notes[i], "major"))
+        scores.append((minor_score, notes[i], "minor"))
+
+    best_score = max(scores, key=lambda item: item[0])
+
+    return f"{best_score[1]} {best_score[2]}"
+   
 @app.post("/api/analyze")
 async def analyze_audio(audio_file: UploadFile = File(...)):
     try:
@@ -55,11 +79,13 @@ async def analyze_audio(audio_file: UploadFile = File(...)):
             y=y,
             sr=sr
         )
+        detected_key = estimate_key(y, sr)
 
         return {
             "filename": audio_file.filename,
             "duration_seconds": round(duration, 2),
-            "bpm": round(float(tempo[0]))
+            "bpm": round(float(tempo[0])),
+            "key": detected_key,
     }
 
     except Exception as error:
