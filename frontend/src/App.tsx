@@ -80,6 +80,8 @@ function App() {
 
       setFormData((previousFormData) => ({
         ...previousFormData,
+        genre: data.suggested_genre,
+        mood: data.suggested_moods.join(", "),
         bpm: data.bpm.toString(),
         key: data.key,
       }));

@@ -4,4 +4,6 @@ export interface AudioAnalysis {
   bpm: number;
   key: string;
   energy: string;
+  suggested_genre: string;
+  suggested_moods: string[];
 }
