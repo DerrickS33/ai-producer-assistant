@@ -81,11 +81,22 @@ async def analyze_audio(audio_file: UploadFile = File(...)):
         )
         detected_key = estimate_key(y, sr)
 
+        rms = librosa.feature.rms(y=y)[0]
+        average_energy = float(rms.mean())
+
+        if average_energy < 0.03:
+             energy = "Low"
+        elif average_energy < 0.08:
+            energy = "Medium"
+        else:
+            energy = "High"
+
         return {
             "filename": audio_file.filename,
             "duration_seconds": round(duration, 2),
             "bpm": round(float(tempo[0])),
             "key": detected_key,
+            "energy": energy,
     }
 
     except Exception as error:

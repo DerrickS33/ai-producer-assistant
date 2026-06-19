@@ -6,6 +6,9 @@ import { generateMarketingKit } from "./services/api";
 import MarketingResults from "./components/MarketingResults";
 import BeatForm from "./components/BeatForm";
 import Hero from "./components/Hero";
+import type { AudioAnalysis } from "./types/audioAnalysis";
+import { analyzeAudio } from "./services/audio";
+import AudioUpload from "./components/AudioUpload";
 
 function App() {
   const [formData, setFormData] = useState({
@@ -19,6 +22,9 @@ function App() {
   const [result, setResult] = useState<MarketingKit | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [analysis, setAnalysis] = useState<AudioAnalysis | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [audioErrorMessage, setAudioErrorMessage] = useState("");
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     const { name, value } = event.target;
@@ -60,6 +66,20 @@ function App() {
     await navigator.clipboard.writeText(text);
   }
 
+  async function handleAudioUpload(file: File) {
+  try {
+    setIsAnalyzing(true);
+    setAudioErrorMessage("");
+
+    const data = await analyzeAudio(file);
+    setAnalysis(data);
+  } catch {
+    setAudioErrorMessage("Failed to analyze audio. Please try another file.");
+  } finally {
+    setIsAnalyzing(false);
+  }
+}
+
   return (
     <main className="min-h-screen bg-[#080b14] text-white">
       <section className="mx-auto max-w-6xl px-6 py-10">
@@ -83,7 +103,12 @@ function App() {
             onSubmit={handleSubmit}
           />
         </div>
-
+        <AudioUpload
+          isAnalyzing={isAnalyzing}
+          analysis={analysis}
+          errorMessage={audioErrorMessage}
+          onFileSelect={handleAudioUpload}
+        />
         {result && (
           <MarketingResults result={result} onCopy={copyToClipboard} />
         )}
