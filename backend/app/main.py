@@ -47,12 +47,20 @@ async def analyze_audio(audio_file: UploadFile = File(...)):
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(audio_file.file, buffer)
 
-        duration = librosa.get_duration(path=file_path)
+        y, sr = librosa.load(file_path)
+
+        duration = librosa.get_duration(y=y, sr=sr)
+
+        tempo, _ = librosa.beat.beat_track(
+            y=y,
+            sr=sr
+        )
 
         return {
             "filename": audio_file.filename,
             "duration_seconds": round(duration, 2),
-        }
+            "bpm": round(float(tempo[0]))
+    }
 
     except Exception as error:
         print("Audio analysis error:", error)
