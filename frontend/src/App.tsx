@@ -67,18 +67,24 @@ function App() {
   }
 
   async function handleAudioUpload(file: File) {
-  try {
-    setIsAnalyzing(true);
-    setAudioErrorMessage("");
+    try {
+      setIsAnalyzing(true);
+      setAudioErrorMessage("");
 
-    const data = await analyzeAudio(file);
-    setAnalysis(data);
-  } catch {
-    setAudioErrorMessage("Failed to analyze audio. Please try another file.");
-  } finally {
-    setIsAnalyzing(false);
+      const data = await analyzeAudio(file);
+      setAnalysis(data);
+
+      setFormData((previousFormData) => ({
+        ...previousFormData,
+        bpm: data.bpm.toString(),
+        key: data.key,
+      }));
+    } catch {
+      setAudioErrorMessage("Failed to analyze audio. Please try another file.");
+    } finally {
+      setIsAnalyzing(false);
+    }
   }
-}
 
   return (
     <main className="min-h-screen bg-[#080b14] text-white">
@@ -93,22 +99,27 @@ function App() {
           </span>
         </nav>
 
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <Hero />
+        <div className="space-y-12">
+          <div className="grid items-center gap-12 lg:grid-cols-2">
+            <Hero />
+
+            <AudioUpload
+              isAnalyzing={isAnalyzing}
+              analysis={analysis}
+              errorMessage={audioErrorMessage}
+              onFileSelect={handleAudioUpload}
+            />
+          </div>
 
           <BeatForm
+            formData={formData}
             isLoading={isLoading}
             errorMessage={errorMessage}
             onChange={handleChange}
             onSubmit={handleSubmit}
           />
         </div>
-        <AudioUpload
-          isAnalyzing={isAnalyzing}
-          analysis={analysis}
-          errorMessage={audioErrorMessage}
-          onFileSelect={handleAudioUpload}
-        />
+
         {result && (
           <MarketingResults result={result} onCopy={copyToClipboard} />
         )}
