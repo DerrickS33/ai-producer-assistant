@@ -1,5 +1,7 @@
 import os
 import shutil
+from app.database import Base, engine
+from app.models.project import Project
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import UploadFile, File
@@ -9,7 +11,7 @@ from app.services.openai_service import generate_marketing_kit_with_ai
 from app.services.audio_analysis_service import analyze_audio_file
 
 app = FastAPI()
-
+Base.metadata.create_all(bind=engine)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
