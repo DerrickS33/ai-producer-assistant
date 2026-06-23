@@ -85,9 +85,13 @@ function App() {
         bpm: data.bpm.toString(),
         key: data.key,
       }));
-    } catch {
-      setAudioErrorMessage("Failed to analyze audio. Please try another file.");
-    } finally {
+   } catch (error) {
+  if (error instanceof Error) {
+    setAudioErrorMessage(error.message);
+  } else {
+    setAudioErrorMessage("Failed to analyze audio. Please try another file.");
+  }
+  }finally {
       setIsAnalyzing(false);
     }
   }

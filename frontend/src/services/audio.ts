@@ -10,7 +10,8 @@ export async function analyzeAudio(file: File): Promise<AudioAnalysis> {
   });
 
   if (!response.ok) {
-    throw new Error("Failed to analyze audio");
+    const errorData = await response.json();
+    throw new Error(errorData.detail || "Failed to analyze audio");
   }
 
   return response.json();

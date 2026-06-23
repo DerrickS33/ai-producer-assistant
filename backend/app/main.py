@@ -1,12 +1,12 @@
 import os
 import shutil
-import librosa
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import UploadFile, File
 
 from app.schemas.marketing import BeatInfo, MarketingKit
 from app.services.openai_service import generate_marketing_kit_with_ai
+from app.services.audio_analysis_service import analyze_audio_file
 
 app = FastAPI()
 
@@ -97,7 +97,28 @@ def suggest_genre_and_moods(bpm, key, energy, brightness, loudness, danceability
    
 @app.post("/api/analyze")
 async def analyze_audio(audio_file: UploadFile = File(...)):
+    file_path = None
+
     try:
+        allowed_content_types = ["audio/mpeg", "audio/wav", "audio/x-wav"]
+
+        if audio_file.content_type not in allowed_content_types:
+            raise HTTPException(
+            status_code=400,
+            detail="Only MP3 and WAV files are supported.",
+        )
+        MAX_FILE_SIZE_MB = 25
+        MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+
+        audio_file.file.seek(0, os.SEEK_END)
+        file_size = audio_file.file.tell()
+        audio_file.file.seek(0)
+
+        if file_size > MAX_FILE_SIZE_BYTES:
+            raise HTTPException(
+            status_code=400,
+            detail=f"File is too large. Max size is {MAX_FILE_SIZE_MB}MB.",
+        )
         upload_dir = "temp_uploads"
         os.makedirs(upload_dir, exist_ok=True)
 
@@ -106,52 +127,7 @@ async def analyze_audio(audio_file: UploadFile = File(...)):
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(audio_file.file, buffer)
 
-        y, sr = librosa.load(file_path)
-
-        duration = librosa.get_duration(y=y, sr=sr)
-
-        tempo, _ = librosa.beat.beat_track(
-            y=y,
-            sr=sr
-        )
-        detected_key = estimate_key(y, sr)
-
-        rms = librosa.feature.rms(y=y)[0]
-        average_energy = float(rms.mean())
-
-        if average_energy < 0.03:
-             energy = "Low"
-        elif average_energy < 0.08:
-            energy = "Medium"
-        else:
-            energy = "High"
-
-        spectral_centroid = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
-        brightness = float(spectral_centroid.mean())
-
-        zero_crossing_rate = librosa.feature.zero_crossing_rate(y)[0]
-        danceability = float(zero_crossing_rate.mean())
-
-        loudness = float(rms.mean())
-
-        suggestions = suggest_genre_and_moods(
-            bpm=round(float(tempo[0])),
-            key=detected_key,
-            energy=energy,
-            brightness=brightness,
-            loudness=loudness,
-            danceability=danceability,
-)
-
-        return {
-            "filename": audio_file.filename,
-            "duration_seconds": round(duration, 2),
-            "bpm": round(float(tempo[0])),
-            "key": detected_key,
-            "energy": energy,
-            "suggested_genre": suggestions["suggested_genre"],
-            "suggested_moods": suggestions["suggested_moods"],
-    }
+        return analyze_audio_file(file_path, audio_file.filename)
 
     except Exception as error:
         print("Audio analysis error:", error)
@@ -159,3 +135,7 @@ async def analyze_audio(audio_file: UploadFile = File(...)):
             status_code=500,
             detail="Failed to analyze audio file",
         )
+
+    finally:
+        if file_path and os.path.exists(file_path):
+            os.remove(file_path)

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { DragEvent } from "react";
+import type { ChangeEvent, DragEvent } from "react";
 import type { AudioAnalysis } from "../types/audioAnalysis";
 
 type AudioUploadProps = {
@@ -17,11 +17,43 @@ function AudioUpload({
 }: AudioUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
 
-  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+  function validateFile(file: File): string {
+    const allowedTypes = [
+      "audio/mpeg",
+      "audio/wav",
+      "audio/x-wav",
+    ];
+
+    const maxFileSizeMB = 25;
+    const maxFileSizeBytes = maxFileSizeMB * 1024 * 1024;
+
+    if (!allowedTypes.includes(file.type)) {
+      return "Only MP3 and WAV files are supported.";
+    }
+
+    if (file.size > maxFileSizeBytes) {
+      return `File is too large. Max size is ${maxFileSizeMB}MB.`;
+    }
+
+    return "";
+  }
+
+  function processFile(file: File) {
+    const validationError = validateFile(file);
+
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
+
+    onFileSelect(file);
+  }
+
+  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
     if (file) {
-      onFileSelect(file);
+      processFile(file);
     }
   }
 
@@ -41,7 +73,7 @@ function AudioUpload({
     const file = event.dataTransfer.files?.[0];
 
     if (file) {
-      onFileSelect(file);
+      processFile(file);
     }
   }
 
@@ -59,7 +91,8 @@ function AudioUpload({
       <h2 className="mb-2 text-2xl font-semibold">Audio Analysis</h2>
 
       <p className="mb-6 text-sm text-slate-400">
-        Drag and drop an MP3 or WAV file to detect BPM, key, duration, and energy.
+        Drag and drop an MP3 or WAV file to detect BPM, key, duration, and
+        energy.
       </p>
 
       <label
@@ -81,7 +114,7 @@ function AudioUpload({
         </span>
 
         <span className="mt-2 text-sm text-slate-500">
-          MP3 or WAV supported
+          MP3 or WAV supported (Max 25MB)
         </span>
 
         <input
@@ -114,7 +147,13 @@ function AudioUpload({
   );
 }
 
-function AnalysisItem({ label, value }: { label: string; value: string }) {
+function AnalysisItem({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
       <p className="text-sm text-slate-400">{label}</p>
