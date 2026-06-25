@@ -9,7 +9,7 @@ import Hero from "./components/Hero";
 import type { AudioAnalysis } from "./types/audioAnalysis";
 import { analyzeAudio } from "./services/audio";
 import AudioUpload from "./components/AudioUpload";
-import { getProjects, saveProject } from "./services/project";
+import { deleteProject, getProjects, saveProject } from "./services/project";
 import type { SavedProject } from "./types/project";
 import ProjectHistory from "./components/ProjectHistory";
 
@@ -138,6 +138,15 @@ function App() {
     }
   }
 
+  async function handleDeleteProject(projectId: number) {
+  try {
+    await deleteProject(projectId);
+    await loadProjects();
+  } catch {
+    console.error("Failed to delete project.");
+  }
+}
+
   function handleLoadProject(project: SavedProject) {
   setFormData({
     title: project.title,
@@ -214,7 +223,11 @@ function App() {
           </>
         )}
 
-        <ProjectHistory projects={projects} onLoadProject={handleLoadProject} />
+        <ProjectHistory
+  projects={projects}
+  onLoadProject={handleLoadProject}
+  onDeleteProject={handleDeleteProject}
+/>
       </section>
     </main>
   );
