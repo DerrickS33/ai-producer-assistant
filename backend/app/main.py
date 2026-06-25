@@ -5,7 +5,11 @@ from app.models.project import Project
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import UploadFile, File
-
+from sqlalchemy.orm import Session
+from fastapi import Depends
+from app.database import get_db
+from app.models.project import Project
+from app.schemas.project import ProjectCreate
 from app.schemas.marketing import BeatInfo, MarketingKit
 from app.services.openai_service import generate_marketing_kit_with_ai
 from app.services.audio_analysis_service import analyze_audio_file
@@ -141,3 +145,25 @@ async def analyze_audio(audio_file: UploadFile = File(...)):
     finally:
         if file_path and os.path.exists(file_path):
             os.remove(file_path)
+            
+@app.post("/api/projects")
+def create_project(project_data: ProjectCreate, db: Session = Depends(get_db)):
+    project = Project(
+        title=project_data.title,
+        genre=project_data.genre,
+        mood=project_data.mood,
+        bpm=project_data.bpm,
+        key=project_data.key,
+        duration_seconds=project_data.duration_seconds,
+        energy=project_data.energy,
+        marketing_kit=project_data.marketing_kit,
+    )
+
+    db.add(project)
+    db.commit()
+    db.refresh(project)
+
+    return {
+        "message": "Project saved successfully",
+        "project_id": project.id,
+    }

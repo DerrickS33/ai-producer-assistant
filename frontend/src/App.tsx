@@ -9,6 +9,7 @@ import Hero from "./components/Hero";
 import type { AudioAnalysis } from "./types/audioAnalysis";
 import { analyzeAudio } from "./services/audio";
 import AudioUpload from "./components/AudioUpload";
+import { saveProject } from "./services/project";
 
 function App() {
   const [formData, setFormData] = useState({
@@ -25,6 +26,7 @@ function App() {
   const [analysis, setAnalysis] = useState<AudioAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [audioErrorMessage, setAudioErrorMessage] = useState("");
+  const [saveMessage, setSaveMessage] = useState("");
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     const { name, value } = event.target;
@@ -52,12 +54,14 @@ function App() {
     try {
       setIsLoading(true);
       setErrorMessage("");
+      setSaveMessage("");
 
       const data = await generateMarketingKit({
-      ...formData,
-      duration_seconds: analysis?.duration_seconds,
-      energy: analysis?.energy,
-    });
+        ...formData,
+        duration_seconds: analysis?.duration_seconds,
+        energy: analysis?.energy,
+      });
+
       setResult(data);
     } catch {
       setErrorMessage("Something went wrong. Please try again.");
@@ -74,6 +78,7 @@ function App() {
     try {
       setIsAnalyzing(true);
       setAudioErrorMessage("");
+      setSaveMessage("");
 
       const data = await analyzeAudio(file);
       setAnalysis(data);
@@ -85,14 +90,34 @@ function App() {
         bpm: data.bpm.toString(),
         key: data.key,
       }));
-   } catch (error) {
-  if (error instanceof Error) {
-    setAudioErrorMessage(error.message);
-  } else {
-    setAudioErrorMessage("Failed to analyze audio. Please try another file.");
-  }
-  }finally {
+    } catch (error) {
+      if (error instanceof Error) {
+        setAudioErrorMessage(error.message);
+      } else {
+        setAudioErrorMessage("Failed to analyze audio. Please try another file.");
+      }
+    } finally {
       setIsAnalyzing(false);
+    }
+  }
+
+  async function handleSaveProject() {
+    if (!result) {
+      return;
+    }
+
+    try {
+      setSaveMessage("");
+
+      await saveProject({
+        ...formData,
+        analysis,
+        marketingKit: result,
+      });
+
+      setSaveMessage("Project saved successfully.");
+    } catch {
+      setSaveMessage("Failed to save project.");
     }
   }
 
@@ -131,7 +156,22 @@ function App() {
         </div>
 
         {result && (
-          <MarketingResults result={result} onCopy={copyToClipboard} />
+          <>
+            <MarketingResults result={result} onCopy={copyToClipboard} />
+
+            <div className="mt-8 flex flex-col items-start gap-3">
+              <button
+                onClick={handleSaveProject}
+                className="rounded-xl bg-green-600 px-6 py-3 font-semibold transition hover:bg-green-500"
+              >
+                Save Project
+              </button>
+
+              {saveMessage && (
+                <p className="text-sm text-slate-300">{saveMessage}</p>
+              )}
+            </div>
+          </>
         )}
       </section>
     </main>
