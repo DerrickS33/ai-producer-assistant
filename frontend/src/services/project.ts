@@ -57,3 +57,28 @@ export async function deleteProject(projectId: number) {
 
   return response.json();
 }
+
+export async function updateProject(projectId: number, projectData: ProjectData) {
+  const response = await fetch(`http://127.0.0.1:8000/api/projects/${projectId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      title: projectData.title,
+      genre: projectData.genre,
+      mood: projectData.mood,
+      bpm: Number(projectData.bpm),
+      key: projectData.key,
+      duration_seconds: projectData.analysis?.duration_seconds ?? 0,
+      energy: projectData.analysis?.energy ?? "Unknown",
+      marketing_kit: projectData.marketingKit,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update project");
+  }
+
+  return response.json();
+}

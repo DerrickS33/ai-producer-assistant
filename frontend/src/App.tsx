@@ -9,7 +9,7 @@ import Hero from "./components/Hero";
 import type { AudioAnalysis } from "./types/audioAnalysis";
 import { analyzeAudio } from "./services/audio";
 import AudioUpload from "./components/AudioUpload";
-import { deleteProject, getProjects, saveProject } from "./services/project";
+import { deleteProject, getProjects, saveProject, updateProject } from "./services/project";
 import type { SavedProject } from "./types/project";
 import ProjectHistory from "./components/ProjectHistory";
 
@@ -30,6 +30,7 @@ function App() {
   const [audioErrorMessage, setAudioErrorMessage] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
   const [projects, setProjects] = useState<SavedProject[]>([]);
+  const [loadedProjectId, setLoadedProjectId] = useState<number | null>(null);
 
   useEffect(() => {
     loadProjects();
@@ -165,10 +166,31 @@ function App() {
     suggested_genre: project.genre,
     suggested_moods: project.mood.split(", "),
   });
-
   setResult(project.marketing_kit);
   setSaveMessage("");
   setErrorMessage("");
+  setLoadedProjectId(project.id);
+}
+
+async function handleUpdateProject() {
+  if (!result || loadedProjectId === null) {
+    return;
+  }
+
+  try {
+    setSaveMessage("");
+
+    await updateProject(loadedProjectId, {
+      ...formData,
+      analysis,
+      marketingKit: result,
+    });
+
+    setSaveMessage("Project updated successfully.");
+    await loadProjects();
+  } catch {
+    setSaveMessage("Failed to update project.");
+  }
 }
   return (
     <main className="min-h-screen bg-[#080b14] text-white">
@@ -208,18 +230,27 @@ function App() {
           <>
             <MarketingResults result={result} onCopy={copyToClipboard} />
 
-            <div className="mt-8 flex flex-col items-start gap-3">
-              <button
-                onClick={handleSaveProject}
-                className="rounded-xl bg-green-600 px-6 py-3 font-semibold transition hover:bg-green-500"
-              >
-                Save Project
-              </button>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+  <button
+    onClick={handleSaveProject}
+    className="rounded-xl bg-green-600 px-6 py-3 font-semibold transition hover:bg-green-500"
+  >
+    Save Project
+  </button>
 
-              {saveMessage && (
-                <p className="text-sm text-slate-300">{saveMessage}</p>
-              )}
-            </div>
+  {loadedProjectId !== null && (
+    <button
+      onClick={handleUpdateProject}
+      className="rounded-xl bg-slate-700 px-6 py-3 font-semibold transition hover:bg-slate-600"
+    >
+      Update Project
+    </button>
+  )}
+
+  {saveMessage && (
+    <p className="w-full text-sm text-slate-300">{saveMessage}</p>
+  )}
+</div>
           </>
         )}
 

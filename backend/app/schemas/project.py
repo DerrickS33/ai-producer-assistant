@@ -13,3 +13,6 @@ class ProjectCreate(BaseModel):
     energy: str
 
     marketing_kit: dict[str, Any]
+    
+class ProjectUpdate(ProjectCreate):
+    pass
