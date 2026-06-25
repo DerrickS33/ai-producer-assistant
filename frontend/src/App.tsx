@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ChangeEvent, SyntheticEvent } from "react";
 import "./App.css";
 import type { MarketingKit } from "./types/marketingKit";
@@ -9,7 +9,9 @@ import Hero from "./components/Hero";
 import type { AudioAnalysis } from "./types/audioAnalysis";
 import { analyzeAudio } from "./services/audio";
 import AudioUpload from "./components/AudioUpload";
-import { saveProject } from "./services/project";
+import { getProjects, saveProject } from "./services/project";
+import type { SavedProject } from "./types/project";
+import ProjectHistory from "./components/ProjectHistory";
 
 function App() {
   const [formData, setFormData] = useState({
@@ -27,6 +29,20 @@ function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [audioErrorMessage, setAudioErrorMessage] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
+  const [projects, setProjects] = useState<SavedProject[]>([]);
+
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  async function loadProjects() {
+    try {
+      const data = await getProjects();
+      setProjects(data);
+    } catch {
+      console.error("Failed to load saved projects.");
+    }
+  }
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     const { name, value } = event.target;
@@ -116,11 +132,35 @@ function App() {
       });
 
       setSaveMessage("Project saved successfully.");
+      await loadProjects();
     } catch {
       setSaveMessage("Failed to save project.");
     }
   }
 
+  function handleLoadProject(project: SavedProject) {
+  setFormData({
+    title: project.title,
+    genre: project.genre,
+    mood: project.mood,
+    bpm: project.bpm.toString(),
+    key: project.key,
+  });
+
+  setAnalysis({
+    filename: project.title,
+    duration_seconds: project.duration_seconds,
+    bpm: project.bpm,
+    key: project.key,
+    energy: project.energy,
+    suggested_genre: project.genre,
+    suggested_moods: project.mood.split(", "),
+  });
+
+  setResult(project.marketing_kit);
+  setSaveMessage("");
+  setErrorMessage("");
+}
   return (
     <main className="min-h-screen bg-[#080b14] text-white">
       <section className="mx-auto max-w-6xl px-6 py-10">
@@ -173,6 +213,8 @@ function App() {
             </div>
           </>
         )}
+
+        <ProjectHistory projects={projects} onLoadProject={handleLoadProject} />
       </section>
     </main>
   );

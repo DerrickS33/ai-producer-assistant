@@ -167,3 +167,8 @@ def create_project(project_data: ProjectCreate, db: Session = Depends(get_db)):
         "message": "Project saved successfully",
         "project_id": project.id,
     }
+    
+@app.get("/api/projects")
+def get_projects(db: Session = Depends(get_db)):
+    projects = db.query(Project).order_by(Project.created_at.desc()).all()
+    return projects
