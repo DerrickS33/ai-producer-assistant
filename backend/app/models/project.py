@@ -1,7 +1,7 @@
 from sqlalchemy import Column, DateTime, Float, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
-
+from sqlalchemy import ForeignKey
 from app.database import Base
 
 
@@ -22,3 +22,4 @@ class Project(Base):
     marketing_kit = Column(JSONB, nullable=False)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)

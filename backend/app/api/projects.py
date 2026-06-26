@@ -3,13 +3,19 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.project import Project
+from app.models.user import User
 from app.schemas.project import ProjectCreate, ProjectUpdate
+from app.services.auth_service import get_current_user
 
 router = APIRouter()
 
 
 @router.post("/api/projects")
-def create_project(project_data: ProjectCreate, db: Session = Depends(get_db)):
+def create_project(
+    project_data: ProjectCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     project = Project(
         title=project_data.title,
         genre=project_data.genre,
@@ -19,6 +25,7 @@ def create_project(project_data: ProjectCreate, db: Session = Depends(get_db)):
         duration_seconds=project_data.duration_seconds,
         energy=project_data.energy,
         marketing_kit=project_data.marketing_kit,
+        user_id=current_user.id,
     )
 
     db.add(project)
@@ -32,14 +39,34 @@ def create_project(project_data: ProjectCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/api/projects")
-def get_projects(db: Session = Depends(get_db)):
-    projects = db.query(Project).order_by(Project.created_at.desc()).all()
+def get_projects(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    projects = (
+        db.query(Project)
+        .filter(Project.user_id == current_user.id)
+        .order_by(Project.created_at.desc())
+        .all()
+    )
+
     return projects
 
 
 @router.delete("/api/projects/{project_id}")
-def delete_project(project_id: int, db: Session = Depends(get_db)):
-    project = db.query(Project).filter(Project.id == project_id).first()
+def delete_project(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    project = (
+        db.query(Project)
+        .filter(
+            Project.id == project_id,
+            Project.user_id == current_user.id,
+        )
+        .first()
+    )
 
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -49,13 +76,22 @@ def delete_project(project_id: int, db: Session = Depends(get_db)):
 
     return {"message": "Project deleted successfully"}
 
+
 @router.put("/api/projects/{project_id}")
 def update_project(
     project_id: int,
     project_data: ProjectUpdate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    project = db.query(Project).filter(Project.id == project_id).first()
+    project = (
+        db.query(Project)
+        .filter(
+            Project.id == project_id,
+            Project.user_id == current_user.id,
+        )
+        .first()
+    )
 
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")

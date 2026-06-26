@@ -11,12 +11,19 @@ type ProjectData = {
   marketingKit: MarketingKit;
 };
 
+function getAuthHeaders() {
+  const token = localStorage.getItem("token");
+
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+}
+
 export async function saveProject(projectData: ProjectData) {
   const response = await fetch("http://127.0.0.1:8000/api/projects", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify({
       title: projectData.title,
       genre: projectData.genre,
@@ -37,7 +44,9 @@ export async function saveProject(projectData: ProjectData) {
 }
 
 export async function getProjects() {
-  const response = await fetch("http://127.0.0.1:8000/api/projects");
+  const response = await fetch("http://127.0.0.1:8000/api/projects", {
+    headers: getAuthHeaders(),
+  });
 
   if (!response.ok) {
     throw new Error("Failed to fetch projects");
@@ -47,9 +56,13 @@ export async function getProjects() {
 }
 
 export async function deleteProject(projectId: number) {
-  const response = await fetch(`http://127.0.0.1:8000/api/projects/${projectId}`, {
-    method: "DELETE",
-  });
+  const response = await fetch(
+    `http://127.0.0.1:8000/api/projects/${projectId}`,
+    {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    }
+  );
 
   if (!response.ok) {
     throw new Error("Failed to delete project");
@@ -59,22 +72,23 @@ export async function deleteProject(projectId: number) {
 }
 
 export async function updateProject(projectId: number, projectData: ProjectData) {
-  const response = await fetch(`http://127.0.0.1:8000/api/projects/${projectId}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      title: projectData.title,
-      genre: projectData.genre,
-      mood: projectData.mood,
-      bpm: Number(projectData.bpm),
-      key: projectData.key,
-      duration_seconds: projectData.analysis?.duration_seconds ?? 0,
-      energy: projectData.analysis?.energy ?? "Unknown",
-      marketing_kit: projectData.marketingKit,
-    }),
-  });
+  const response = await fetch(
+    `http://127.0.0.1:8000/api/projects/${projectId}`,
+    {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        title: projectData.title,
+        genre: projectData.genre,
+        mood: projectData.mood,
+        bpm: Number(projectData.bpm),
+        key: projectData.key,
+        duration_seconds: projectData.analysis?.duration_seconds ?? 0,
+        energy: projectData.analysis?.energy ?? "Unknown",
+        marketing_kit: projectData.marketingKit,
+      }),
+    }
+  );
 
   if (!response.ok) {
     throw new Error("Failed to update project");
