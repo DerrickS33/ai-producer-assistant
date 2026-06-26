@@ -18,9 +18,16 @@ import {
 import type { SavedProject } from "./types/project";
 import ProjectHistory from "./components/ProjectHistory";
 import AuthForm from "./components/AuthForm";
+import { getCurrentUser } from "./services/auth";
+
+type CurrentUser = {
+  id: number;
+  email: string;
+};
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -43,6 +50,7 @@ function App() {
   useEffect(() => {
     if (token) {
       loadProjects();
+      loadCurrentUser();
     }
   }, [token]);
 
@@ -55,6 +63,15 @@ function App() {
     }
   }
 
+  async function loadCurrentUser() {
+    try {
+      const data = await getCurrentUser();
+      setCurrentUser(data);
+    } catch {
+      console.error("Failed to load current user.");
+    }
+  }
+
   function handleAuthSuccess(newToken: string) {
     setToken(newToken);
   }
@@ -62,6 +79,7 @@ function App() {
   function handleLogout() {
     localStorage.removeItem("token");
     setToken(null);
+    setCurrentUser(null);
     setProjects([]);
     setResult(null);
     setAnalysis(null);
@@ -234,6 +252,12 @@ function App() {
             <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-sm text-blue-300">
               MVP Demo
             </span>
+
+            {currentUser && (
+              <span className="text-sm text-slate-400">
+                {currentUser.email}
+              </span>
+            )}
 
             <button
               onClick={handleLogout}

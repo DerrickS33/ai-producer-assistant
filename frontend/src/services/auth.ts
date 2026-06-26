@@ -45,3 +45,19 @@ export async function loginUser(
 
   return response.json();
 }
+
+export async function getCurrentUser() {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch current user");
+  }
+
+  return response.json();
+}
