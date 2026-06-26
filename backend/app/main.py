@@ -6,6 +6,10 @@ from app.api.marketing import router as marketing_router
 from app.api.projects import router as projects_router
 from app.database import Base, engine
 from app.models.project import Project
+from app.models.user import User
+from app.api.auth import router as auth_router
+from app.models.user import User
+
 
 app = FastAPI()
 
@@ -22,6 +26,7 @@ app.add_middleware(
 app.include_router(analysis_router)
 app.include_router(marketing_router)
 app.include_router(projects_router)
+app.include_router(auth_router)
 
 
 @app.get("/")

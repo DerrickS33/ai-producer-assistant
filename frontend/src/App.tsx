@@ -9,11 +9,19 @@ import Hero from "./components/Hero";
 import type { AudioAnalysis } from "./types/audioAnalysis";
 import { analyzeAudio } from "./services/audio";
 import AudioUpload from "./components/AudioUpload";
-import { deleteProject, getProjects, saveProject, updateProject } from "./services/project";
+import {
+  deleteProject,
+  getProjects,
+  saveProject,
+  updateProject,
+} from "./services/project";
 import type { SavedProject } from "./types/project";
 import ProjectHistory from "./components/ProjectHistory";
+import AuthForm from "./components/AuthForm";
 
 function App() {
+  const [token, setToken] = useState(localStorage.getItem("token"));
+
   const [formData, setFormData] = useState({
     title: "",
     genre: "",
@@ -33,8 +41,10 @@ function App() {
   const [loadedProjectId, setLoadedProjectId] = useState<number | null>(null);
 
   useEffect(() => {
-    loadProjects();
-  }, []);
+    if (token) {
+      loadProjects();
+    }
+  }, [token]);
 
   async function loadProjects() {
     try {
@@ -43,6 +53,20 @@ function App() {
     } catch {
       console.error("Failed to load saved projects.");
     }
+  }
+
+  function handleAuthSuccess(newToken: string) {
+    setToken(newToken);
+  }
+
+  function handleLogout() {
+    localStorage.removeItem("token");
+    setToken(null);
+    setProjects([]);
+    setResult(null);
+    setAnalysis(null);
+    setSaveMessage("");
+    setLoadedProjectId(null);
   }
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
@@ -140,58 +164,64 @@ function App() {
   }
 
   async function handleDeleteProject(projectId: number) {
-  try {
-    await deleteProject(projectId);
-    await loadProjects();
-  } catch {
-    console.error("Failed to delete project.");
+    try {
+      await deleteProject(projectId);
+      await loadProjects();
+    } catch {
+      console.error("Failed to delete project.");
+    }
   }
-}
 
   function handleLoadProject(project: SavedProject) {
-  setFormData({
-    title: project.title,
-    genre: project.genre,
-    mood: project.mood,
-    bpm: project.bpm.toString(),
-    key: project.key,
-  });
-
-  setAnalysis({
-    filename: project.title,
-    duration_seconds: project.duration_seconds,
-    bpm: project.bpm,
-    key: project.key,
-    energy: project.energy,
-    suggested_genre: project.genre,
-    suggested_moods: project.mood.split(", "),
-  });
-  setResult(project.marketing_kit);
-  setSaveMessage("");
-  setErrorMessage("");
-  setLoadedProjectId(project.id);
-}
-
-async function handleUpdateProject() {
-  if (!result || loadedProjectId === null) {
-    return;
-  }
-
-  try {
-    setSaveMessage("");
-
-    await updateProject(loadedProjectId, {
-      ...formData,
-      analysis,
-      marketingKit: result,
+    setFormData({
+      title: project.title,
+      genre: project.genre,
+      mood: project.mood,
+      bpm: project.bpm.toString(),
+      key: project.key,
     });
 
-    setSaveMessage("Project updated successfully.");
-    await loadProjects();
-  } catch {
-    setSaveMessage("Failed to update project.");
+    setAnalysis({
+      filename: project.title,
+      duration_seconds: project.duration_seconds,
+      bpm: project.bpm,
+      key: project.key,
+      energy: project.energy,
+      suggested_genre: project.genre,
+      suggested_moods: project.mood.split(", "),
+    });
+
+    setResult(project.marketing_kit);
+    setSaveMessage("");
+    setErrorMessage("");
+    setLoadedProjectId(project.id);
   }
-}
+
+  async function handleUpdateProject() {
+    if (!result || loadedProjectId === null) {
+      return;
+    }
+
+    try {
+      setSaveMessage("");
+
+      await updateProject(loadedProjectId, {
+        ...formData,
+        analysis,
+        marketingKit: result,
+      });
+
+      setSaveMessage("Project updated successfully.");
+      await loadProjects();
+    } catch {
+      setSaveMessage("Failed to update project.");
+    }
+  }
+
+  if (!token) {
+    return <AuthForm onAuthSuccess={handleAuthSuccess} />;
+  }
+
   return (
     <main className="min-h-screen bg-[#080b14] text-white">
       <section className="mx-auto max-w-6xl px-6 py-10">
@@ -200,9 +230,18 @@ async function handleUpdateProject() {
             AI Producer Assistant
           </div>
 
-          <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-sm text-blue-300">
-            MVP Demo
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-sm text-blue-300">
+              MVP Demo
+            </span>
+
+            <button
+              onClick={handleLogout}
+              className="rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-300 transition hover:border-red-400 hover:text-red-300"
+            >
+              Logout
+            </button>
+          </div>
         </nav>
 
         <div className="space-y-12">
@@ -231,34 +270,34 @@ async function handleUpdateProject() {
             <MarketingResults result={result} onCopy={copyToClipboard} />
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
-  <button
-    onClick={handleSaveProject}
-    className="rounded-xl bg-green-600 px-6 py-3 font-semibold transition hover:bg-green-500"
-  >
-    Save Project
-  </button>
+              <button
+                onClick={handleSaveProject}
+                className="rounded-xl bg-green-600 px-6 py-3 font-semibold transition hover:bg-green-500"
+              >
+                Save Project
+              </button>
 
-  {loadedProjectId !== null && (
-    <button
-      onClick={handleUpdateProject}
-      className="rounded-xl bg-slate-700 px-6 py-3 font-semibold transition hover:bg-slate-600"
-    >
-      Update Project
-    </button>
-  )}
+              {loadedProjectId !== null && (
+                <button
+                  onClick={handleUpdateProject}
+                  className="rounded-xl bg-slate-700 px-6 py-3 font-semibold transition hover:bg-slate-600"
+                >
+                  Update Project
+                </button>
+              )}
 
-  {saveMessage && (
-    <p className="w-full text-sm text-slate-300">{saveMessage}</p>
-  )}
-</div>
+              {saveMessage && (
+                <p className="w-full text-sm text-slate-300">{saveMessage}</p>
+              )}
+            </div>
           </>
         )}
 
         <ProjectHistory
-  projects={projects}
-  onLoadProject={handleLoadProject}
-  onDeleteProject={handleDeleteProject}
-/>
+          projects={projects}
+          onLoadProject={handleLoadProject}
+          onDeleteProject={handleDeleteProject}
+        />
       </section>
     </main>
   );
