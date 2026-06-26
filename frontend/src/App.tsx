@@ -18,16 +18,10 @@ import {
 import type { SavedProject } from "./types/project";
 import ProjectHistory from "./components/ProjectHistory";
 import AuthForm from "./components/AuthForm";
-import { getCurrentUser } from "./services/auth";
-
-type CurrentUser = {
-  id: number;
-  email: string;
-};
+import { useAuth } from "./context/AuthContext";
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem("token"));
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const { token, currentUser, isAuthLoading, login, logout } = useAuth();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -50,7 +44,6 @@ function App() {
   useEffect(() => {
     if (token) {
       loadProjects();
-      loadCurrentUser();
     }
   }, [token]);
 
@@ -63,23 +56,12 @@ function App() {
     }
   }
 
-  async function loadCurrentUser() {
-    try {
-      const data = await getCurrentUser();
-      setCurrentUser(data);
-    } catch {
-      console.error("Failed to load current user.");
-    }
-  }
-
   function handleAuthSuccess(newToken: string) {
-    setToken(newToken);
+    login(newToken);
   }
 
   function handleLogout() {
-    localStorage.removeItem("token");
-    setToken(null);
-    setCurrentUser(null);
+    logout();
     setProjects([]);
     setResult(null);
     setAnalysis(null);
@@ -234,6 +216,14 @@ function App() {
     } catch {
       setSaveMessage("Failed to update project.");
     }
+  }
+
+  if (isAuthLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#080b14] text-white">
+        <p className="text-slate-400">Loading...</p>
+      </main>
+    );
   }
 
   if (!token) {

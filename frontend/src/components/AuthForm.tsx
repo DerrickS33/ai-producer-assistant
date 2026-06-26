@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { SyntheticEvent } from "react";
+import { loginUser, registerUser } from "../services/auth";
 
 type AuthMode = "login" | "register";
 
@@ -12,18 +13,36 @@ function AuthForm({ onAuthSuccess }: AuthFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   async function handleSubmit(event: SyntheticEvent) {
     event.preventDefault();
 
-    const { loginUser, registerUser } = await import("../services/auth");
+    try {
+      setIsSubmitting(true);
+      setErrorMessage("");
 
-    const response =
-      mode === "login"
-        ? await loginUser({ email, password })
-        : await registerUser({ email, password });
+      const response =
+        mode === "login"
+          ? await loginUser({ email, password })
+          : await registerUser({ email, password });
 
-    localStorage.setItem("token", response.access_token);
-    onAuthSuccess(response.access_token);
+      onAuthSuccess(response.access_token);
+    } catch (error) {
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("Something went wrong. Please try again.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  function toggleMode() {
+    setMode(mode === "login" ? "register" : "login");
+    setErrorMessage("");
   }
 
   return (
@@ -52,6 +71,7 @@ function AuthForm({ onAuthSuccess }: AuthFormProps) {
               className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              required
             />
 
             <input
@@ -60,19 +80,31 @@ function AuthForm({ onAuthSuccess }: AuthFormProps) {
               className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
+              required
             />
           </div>
 
+          {errorMessage && (
+            <p className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+              {errorMessage}
+            </p>
+          )}
+
           <button
             type="submit"
-            className="mt-6 w-full rounded-xl bg-blue-600 px-5 py-4 font-semibold transition hover:bg-blue-500"
+            disabled={isSubmitting}
+            className="mt-6 w-full rounded-xl bg-blue-600 px-5 py-4 font-semibold transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {mode === "login" ? "Login" : "Create Account"}
+            {isSubmitting
+              ? "Please wait..."
+              : mode === "login"
+              ? "Login"
+              : "Create Account"}
           </button>
 
           <button
             type="button"
-            onClick={() => setMode(mode === "login" ? "register" : "login")}
+            onClick={toggleMode}
             className="mt-4 text-sm text-blue-300 hover:text-blue-200"
           >
             {mode === "login"
