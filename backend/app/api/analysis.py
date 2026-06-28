@@ -1,5 +1,6 @@
 import os
 import shutil
+from uuid import uuid4
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
@@ -13,7 +14,13 @@ async def analyze_audio(audio_file: UploadFile = File(...)):
     file_path = None
 
     try:
-        allowed_content_types = ["audio/mpeg", "audio/wav", "audio/x-wav"]
+        allowed_content_types = [
+            "audio/mpeg",
+            "audio/mp3",
+            "audio/wav",
+            "audio/x-wav",
+            "audio/wave",
+        ]
 
         if audio_file.content_type not in allowed_content_types:
             raise HTTPException(
@@ -37,21 +44,23 @@ async def analyze_audio(audio_file: UploadFile = File(...)):
         upload_dir = "temp_uploads"
         os.makedirs(upload_dir, exist_ok=True)
 
-        file_path = os.path.join(upload_dir, audio_file.filename)
+        original_filename = audio_file.filename or "uploaded_audio"
+        safe_filename = f"{uuid4()}_{original_filename}"
+        file_path = os.path.join(upload_dir, safe_filename)
 
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(audio_file.file, buffer)
 
-        return analyze_audio_file(file_path, audio_file.filename)
+        return analyze_audio_file(file_path, original_filename)
 
     except HTTPException:
         raise
 
     except Exception as error:
-        print("Audio analysis error:", error)
+        print("Audio analysis error:", repr(error))
         raise HTTPException(
             status_code=500,
-            detail="Failed to analyze audio file",
+            detail=f"Failed to analyze audio file: {str(error)}",
         )
 
     finally:
