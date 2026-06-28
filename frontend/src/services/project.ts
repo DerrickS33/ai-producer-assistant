@@ -11,6 +11,8 @@ type ProjectData = {
   marketingKit: MarketingKit;
 };
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 function getAuthHeaders() {
   const token = localStorage.getItem("token");
 
@@ -21,7 +23,7 @@ function getAuthHeaders() {
 }
 
 export async function saveProject(projectData: ProjectData) {
-  const response = await fetch("http://127.0.0.1:8000/api/projects", {
+  const response = await fetch(`${API_BASE_URL}/api/projects`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({
@@ -44,7 +46,7 @@ export async function saveProject(projectData: ProjectData) {
 }
 
 export async function getProjects() {
-  const response = await fetch("http://127.0.0.1:8000/api/projects", {
+  const response = await fetch(`${API_BASE_URL}/api/projects`, {
     headers: getAuthHeaders(),
   });
 
@@ -56,13 +58,10 @@ export async function getProjects() {
 }
 
 export async function deleteProject(projectId: number) {
-  const response = await fetch(
-    `http://127.0.0.1:8000/api/projects/${projectId}`,
-    {
-      method: "DELETE",
-      headers: getAuthHeaders(),
-    }
-  );
+  const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
 
   if (!response.ok) {
     throw new Error("Failed to delete project");
@@ -72,23 +71,20 @@ export async function deleteProject(projectId: number) {
 }
 
 export async function updateProject(projectId: number, projectData: ProjectData) {
-  const response = await fetch(
-    `http://127.0.0.1:8000/api/projects/${projectId}`,
-    {
-      method: "PUT",
-      headers: getAuthHeaders(),
-      body: JSON.stringify({
-        title: projectData.title,
-        genre: projectData.genre,
-        mood: projectData.mood,
-        bpm: Number(projectData.bpm),
-        key: projectData.key,
-        duration_seconds: projectData.analysis?.duration_seconds ?? 0,
-        energy: projectData.analysis?.energy ?? "Unknown",
-        marketing_kit: projectData.marketingKit,
-      }),
-    }
-  );
+  const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({
+      title: projectData.title,
+      genre: projectData.genre,
+      mood: projectData.mood,
+      bpm: Number(projectData.bpm),
+      key: projectData.key,
+      duration_seconds: projectData.analysis?.duration_seconds ?? 0,
+      energy: projectData.analysis?.energy ?? "Unknown",
+      marketing_kit: projectData.marketingKit,
+    }),
+  });
 
   if (!response.ok) {
     throw new Error("Failed to update project");
