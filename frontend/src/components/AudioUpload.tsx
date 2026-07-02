@@ -9,6 +9,8 @@ type AudioUploadProps = {
   onFileSelect: (file: File) => void;
 };
 
+const isProduction = import.meta.env.PROD;
+
 function AudioUpload({
   isAnalyzing,
   analysis,
@@ -16,14 +18,10 @@ function AudioUpload({
   onFileSelect,
 }: AudioUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
+  const [validationMessage, setValidationMessage] = useState("");
 
   function validateFile(file: File): string {
-    const allowedTypes = [
-      "audio/mpeg",
-      "audio/wav",
-      "audio/x-wav",
-    ];
-
+    const allowedTypes = ["audio/mpeg", "audio/wav", "audio/x-wav"];
     const maxFileSizeMB = 25;
     const maxFileSizeBytes = maxFileSizeMB * 1024 * 1024;
 
@@ -42,10 +40,11 @@ function AudioUpload({
     const validationError = validateFile(file);
 
     if (validationError) {
-      alert(validationError);
+      setValidationMessage(validationError);
       return;
     }
 
+    setValidationMessage("");
     onFileSelect(file);
   }
 
@@ -59,7 +58,10 @@ function AudioUpload({
 
   function handleDragOver(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
-    setIsDragging(true);
+
+    if (!isProduction) {
+      setIsDragging(true);
+    }
   }
 
   function handleDragLeave() {
@@ -69,6 +71,10 @@ function AudioUpload({
   function handleDrop(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
     setIsDragging(false);
+
+    if (isProduction) {
+      return;
+    }
 
     const file = event.dataTransfer.files?.[0];
 
@@ -91,44 +97,58 @@ function AudioUpload({
       <h2 className="mb-2 text-2xl font-semibold">Audio Analysis</h2>
 
       <p className="mb-6 text-sm text-slate-400">
-        Drag and drop an MP3 or WAV file to detect BPM, key, duration, and
-        energy.
+        Detect BPM, key, duration, and energy from uploaded beats.
       </p>
 
-      <label
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed p-8 text-center transition ${
-          isDragging
-            ? "border-blue-500 bg-blue-500/10"
-            : "border-slate-700 bg-slate-950 hover:border-blue-500"
-        }`}
-      >
-        <span className="text-lg font-semibold">
-          {isAnalyzing
-            ? "Analyzing audio..."
-            : isDragging
-            ? "Drop your beat here"
-            : "Drag your beat here or click to upload"}
-        </span>
+      {isProduction ? (
+        <div className="rounded-2xl border border-blue-500/30 bg-blue-500/10 p-5">
+          <p className="font-semibold text-blue-200">
+            Audio analysis is available in local development only.
+          </p>
 
-        <span className="mt-2 text-sm text-slate-500">
-          MP3 or WAV supported (Max 25MB)
-        </span>
+          <p className="mt-2 text-sm leading-6 text-slate-300">
+            The deployed demo uses manual beat entry because audio processing
+            exceeds the memory limits of the free backend hosting tier. You can
+            still enter beat information manually and generate a full marketing
+            kit.
+          </p>
+        </div>
+      ) : (
+        <label
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed p-8 text-center transition ${
+            isDragging
+              ? "border-blue-500 bg-blue-500/10"
+              : "border-slate-700 bg-slate-950 hover:border-blue-500"
+          }`}
+        >
+          <span className="text-lg font-semibold">
+            {isAnalyzing
+              ? "Analyzing audio..."
+              : isDragging
+              ? "Drop your beat here"
+              : "Drag your beat here or click to upload"}
+          </span>
 
-        <input
-          type="file"
-          accept=".mp3,.wav,audio/mpeg,audio/wav"
-          className="hidden"
-          onChange={handleFileChange}
-          disabled={isAnalyzing}
-        />
-      </label>
+          <span className="mt-2 text-sm text-slate-500">
+            MP3 or WAV supported (Max 25MB)
+          </span>
 
-      {errorMessage && (
+          <input
+            type="file"
+            accept=".mp3,.wav,audio/mpeg,audio/wav"
+            className="hidden"
+            onChange={handleFileChange}
+            disabled={isAnalyzing}
+          />
+        </label>
+      )}
+
+      {(validationMessage || errorMessage) && (
         <p className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-          {errorMessage}
+          {validationMessage || errorMessage}
         </p>
       )}
 
@@ -147,13 +167,7 @@ function AudioUpload({
   );
 }
 
-function AnalysisItem({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function AnalysisItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
       <p className="text-sm text-slate-400">{label}</p>
