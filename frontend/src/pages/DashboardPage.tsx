@@ -307,10 +307,6 @@ function DashboardPage() {
           onLoadProject={handleLoadProject}
           onDeleteProject={handleDeleteProject}
         />
-
-        <footer className="mt-16 border-t border-slate-800 pt-6 text-center text-sm text-slate-500">
-          Built with React, TypeScript, FastAPI, PostgreSQL, Supabase, JWT, and OpenAI.
-        </footer>
       </section>
     </main>
   );
