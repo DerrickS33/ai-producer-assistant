@@ -35,9 +35,9 @@ function BeatForm({
       </p>
 
       <div className="space-y-4">
-        <Input name="title" value={formData.title} placeholder="Beat title" onChange={onChange} />
-        <Input name="genre" value={formData.genre} placeholder="Genre, e.g. Trap" onChange={onChange} />
-        <Input name="mood" value={formData.mood} placeholder="Mood, e.g. Dark" onChange={onChange} />
+        <Input name="title" value={formData.title} placeholder="Beat title" onChange={onChange} required />
+        <Input name="genre" value={formData.genre} placeholder="Genre, e.g. Trap" onChange={onChange} required />
+        <Input name="mood" value={formData.mood} placeholder="Mood, e.g. Dark" onChange={onChange} required />
         <Input name="bpm" value={formData.bpm} placeholder="BPM, e.g. 140" onChange={onChange} />
         <Input name="key" value={formData.key} placeholder="Key, e.g. F Minor" onChange={onChange} />
       </div>
@@ -53,7 +53,7 @@ function BeatForm({
         className="mt-6 w-full rounded-xl bg-blue-600 px-5 py-4 font-semibold transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
         disabled={isLoading}
       >
-        {isLoading ? "Generating..." : "Generate Marketing Kit"}
+        {isLoading ? "Generating marketing kit..." : "Generate Marketing Kit"}
       </button>
     </form>
   );
@@ -64,11 +64,13 @@ function Input({
   value,
   placeholder,
   onChange,
+  required = false,
 }: {
   name: string;
   value: string;
   placeholder: string;
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  required?: boolean;
 }) {
   return (
     <input
@@ -76,6 +78,7 @@ function Input({
       value={value}
       placeholder={placeholder}
       onChange={onChange}
+      required={required}
       className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
     />
   );
