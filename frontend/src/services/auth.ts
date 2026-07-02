@@ -10,6 +10,24 @@ type AuthResponse = {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+async function getErrorMessage(response: Response, fallbackMessage: string) {
+  try {
+    const errorData = await response.json();
+
+    if (typeof errorData.detail === "string") {
+      return errorData.detail;
+    }
+
+    if (Array.isArray(errorData.detail)) {
+      return errorData.detail[0]?.msg || fallbackMessage;
+    }
+
+    return fallbackMessage;
+  } catch {
+    return fallbackMessage;
+  }
+}
+
 export async function registerUser(
   credentials: AuthCredentials
 ): Promise<AuthResponse> {
@@ -22,7 +40,12 @@ export async function registerUser(
   });
 
   if (!response.ok) {
-    throw new Error("Failed to register user");
+    const message = await getErrorMessage(
+      response,
+      "Failed to register user"
+    );
+
+    throw new Error(message);
   }
 
   return response.json();
@@ -40,7 +63,12 @@ export async function loginUser(
   });
 
   if (!response.ok) {
-    throw new Error("Invalid email or password");
+    const message = await getErrorMessage(
+      response,
+      "Invalid email or password"
+    );
+
+    throw new Error(message);
   }
 
   return response.json();
