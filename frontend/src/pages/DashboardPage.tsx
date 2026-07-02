@@ -32,12 +32,15 @@ function DashboardPage() {
   const [result, setResult] = useState<MarketingKit | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
   const [analysis, setAnalysis] = useState<AudioAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [audioErrorMessage, setAudioErrorMessage] = useState("");
+
   const [saveMessage, setSaveMessage] = useState("");
   const [projects, setProjects] = useState<SavedProject[]>([]);
   const [loadedProjectId, setLoadedProjectId] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     loadProjects();
@@ -48,7 +51,7 @@ function DashboardPage() {
       const data = await getProjects();
       setProjects(data);
     } catch {
-      console.error("Failed to load saved projects.");
+      setSaveMessage("Failed to load saved projects.");
     }
   }
 
@@ -88,6 +91,7 @@ function DashboardPage() {
       setIsLoading(true);
       setErrorMessage("");
       setSaveMessage("");
+      setLoadedProjectId(null);
 
       const data = await generateMarketingKit({
         ...formData,
@@ -97,7 +101,7 @@ function DashboardPage() {
 
       setResult(data);
     } catch {
-      setErrorMessage("Something went wrong. Please try again.");
+      setErrorMessage("Failed to generate marketing kit. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -135,11 +139,10 @@ function DashboardPage() {
   }
 
   async function handleSaveProject() {
-    if (!result) {
-      return;
-    }
+    if (!result) return;
 
     try {
+      setIsSaving(true);
       setSaveMessage("");
 
       await saveProject({
@@ -152,15 +155,24 @@ function DashboardPage() {
       await loadProjects();
     } catch {
       setSaveMessage("Failed to save project.");
+    } finally {
+      setIsSaving(false);
     }
   }
 
   async function handleDeleteProject(projectId: number) {
     try {
+      setSaveMessage("");
       await deleteProject(projectId);
       await loadProjects();
+
+      if (loadedProjectId === projectId) {
+        setLoadedProjectId(null);
+      }
+
+      setSaveMessage("Project deleted successfully.");
     } catch {
-      console.error("Failed to delete project.");
+      setSaveMessage("Failed to delete project.");
     }
   }
 
@@ -184,17 +196,16 @@ function DashboardPage() {
     });
 
     setResult(project.marketing_kit);
-    setSaveMessage("");
+    setSaveMessage("Project loaded.");
     setErrorMessage("");
     setLoadedProjectId(project.id);
   }
 
   async function handleUpdateProject() {
-    if (!result || loadedProjectId === null) {
-      return;
-    }
+    if (!result || loadedProjectId === null) return;
 
     try {
+      setIsSaving(true);
       setSaveMessage("");
 
       await updateProject(loadedProjectId, {
@@ -207,6 +218,8 @@ function DashboardPage() {
       await loadProjects();
     } catch {
       setSaveMessage("Failed to update project.");
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -266,17 +279,19 @@ function DashboardPage() {
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <button
                 onClick={handleSaveProject}
-                className="rounded-xl bg-green-600 px-6 py-3 font-semibold transition hover:bg-green-500"
+                disabled={isSaving}
+                className="rounded-xl bg-green-600 px-6 py-3 font-semibold transition hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Save Project
+                {isSaving ? "Saving..." : "Save Project"}
               </button>
 
               {loadedProjectId !== null && (
                 <button
                   onClick={handleUpdateProject}
-                  className="rounded-xl bg-slate-700 px-6 py-3 font-semibold transition hover:bg-slate-600"
+                  disabled={isSaving}
+                  className="rounded-xl bg-slate-700 px-6 py-3 font-semibold transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Update Project
+                  {isSaving ? "Updating..." : "Update Project"}
                 </button>
               )}
 
@@ -292,6 +307,10 @@ function DashboardPage() {
           onLoadProject={handleLoadProject}
           onDeleteProject={handleDeleteProject}
         />
+
+        <footer className="mt-16 border-t border-slate-800 pt-6 text-center text-sm text-slate-500">
+          Built with React, TypeScript, FastAPI, PostgreSQL, Supabase, JWT, and OpenAI.
+        </footer>
       </section>
     </main>
   );
