@@ -43,6 +43,7 @@ function AuthForm({ onAuthSuccess }: AuthFormProps) {
   function toggleMode() {
     setMode(mode === "login" ? "register" : "login");
     setErrorMessage("");
+    setPassword("");
   }
 
   return (
@@ -74,14 +75,24 @@ function AuthForm({ onAuthSuccess }: AuthFormProps) {
               required
             />
 
-            <input
-              type="password"
-              placeholder="Password"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-            />
+            <div>
+              <input
+                type="password"
+                placeholder="Password"
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                minLength={8}
+                maxLength={72}
+                required
+              />
+
+              {mode === "register" && (
+                <p className="mt-2 text-xs text-slate-500">
+                  Password must be 8–72 characters.
+                </p>
+              )}
+            </div>
           </div>
 
           {errorMessage && (
@@ -98,8 +109,8 @@ function AuthForm({ onAuthSuccess }: AuthFormProps) {
             {isSubmitting
               ? "Please wait..."
               : mode === "login"
-              ? "Login"
-              : "Create Account"}
+                ? "Login"
+                : "Create Account"}
           </button>
 
           <button
