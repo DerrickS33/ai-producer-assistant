@@ -10,6 +10,7 @@ Users can create an account, log in, enter beat information, generate a complete
 ## Live Demo
 
 Frontend: https://ai-producer-assistant.vercel.app  
+(note: heads up, it's a bit slow since it's running on Render's free tier)
 
 # Screenshots
 
