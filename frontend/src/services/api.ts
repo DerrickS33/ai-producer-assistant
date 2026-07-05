@@ -1,3 +1,10 @@
+/**
+ * API service for marketing kit generation.
+ *
+ * This module handles communication between the frontend and backend
+ * marketing generation endpoint.
+ */
+
 import type { MarketingKit } from "../types/marketingKit";
 
 type GenerateMarketingKitData = {
@@ -12,6 +19,12 @@ type GenerateMarketingKitData = {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+/**
+ * Generate an AI powered marketing kit from beat metadata.
+ *
+ * Audio analysis results can optionally be included to provide the
+ * backend with additional context for generating more relevant outputs.
+ */
 export async function generateMarketingKit(
   formData: GenerateMarketingKitData
 ): Promise<MarketingKit> {

@@ -1,23 +1,33 @@
 import { useEffect, useState } from "react";
 import type { ChangeEvent, SyntheticEvent } from "react";
-import type { MarketingKit } from "../types/marketingKit";
-import { generateMarketingKit } from "../services/api";
-import MarketingResults from "../components/MarketingResults";
+
+import AudioUpload from "../components/AudioUpload";
 import BeatForm from "../components/BeatForm";
 import Hero from "../components/Hero";
-import type { AudioAnalysis } from "../types/audioAnalysis";
+import MarketingResults from "../components/MarketingResults";
+import ProjectHistory from "../components/ProjectHistory";
+import { useAuth } from "../context/AuthContext";
+import { generateMarketingKit } from "../services/api";
 import { analyzeAudio } from "../services/audio";
-import AudioUpload from "../components/AudioUpload";
 import {
   deleteProject,
   getProjects,
   saveProject,
   updateProject,
 } from "../services/project";
+import type { AudioAnalysis } from "../types/audioAnalysis";
+import type { MarketingKit } from "../types/marketingKit";
 import type { SavedProject } from "../types/project";
-import ProjectHistory from "../components/ProjectHistory";
-import { useAuth } from "../context/AuthContext";
 
+/**
+ * Main authenticated dashboard for AI Producer Assistant.
+ *
+ * This page connects the core user workflow:
+ * - Upload and analyze audio
+ * - Enter or adjust beat metadata
+ * - Generate an AI marketing kit
+ * - Save, reload, update, and delete projects
+ */
 function DashboardPage() {
   const { currentUser, logout } = useAuth();
 
@@ -47,6 +57,9 @@ function DashboardPage() {
   }, []);
 
   async function loadProjects() {
+    /**
+     * Load saved projects for the authenticated user.
+     */
     try {
       const data = await getProjects();
       setProjects(data);
@@ -56,6 +69,9 @@ function DashboardPage() {
   }
 
   function handleLogout() {
+    /**
+     * Clear user-specific dashboard state after logout.
+     */
     logout();
     setProjects([]);
     setResult(null);
@@ -93,6 +109,7 @@ function DashboardPage() {
       setSaveMessage("");
       setLoadedProjectId(null);
 
+      // Audio analysis values are included when available to improve AI output.
       const data = await generateMarketingKit({
         ...formData,
         duration_seconds: analysis?.duration_seconds,
@@ -120,6 +137,7 @@ function DashboardPage() {
       const data = await analyzeAudio(file);
       setAnalysis(data);
 
+      // Use extracted audio features to prefill the form and reduce manual input.
       setFormData((previousFormData) => ({
         ...previousFormData,
         genre: data.suggested_genre,
@@ -177,6 +195,10 @@ function DashboardPage() {
   }
 
   function handleLoadProject(project: SavedProject) {
+    /**
+     * Restore a saved project into the dashboard so the user can view,
+     * regenerate, or update the existing marketing kit.
+     */
     setFormData({
       title: project.title,
       genre: project.genre,

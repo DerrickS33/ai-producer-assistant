@@ -4,10 +4,12 @@ Music producers spend a surprising amount of time coming up with titles, tags, d
 
 Users can create an account, log in, enter beat information, generate a complete marketing kit, save projects, and revisit saved projects later.
 
+## Video Walkthrough
+![Demo](screenshots/Appwalkthrough.gif)
+
 ## Live Demo
 
 Frontend: https://ai-producer-assistant.vercel.app  
-Backend API: https://ai-producer-assistant.onrender.com
 
 # Screenshots
 
@@ -68,6 +70,15 @@ Backend API: https://ai-producer-assistant.onrender.com
 - MP3/WAV upload support in local development
 
 > Note: Audio analysis works locally, but is currently limited in production because Render's free tier runs out of memory during Librosa processing. Manual beat entry and AI generation are fully functional in the deployed version.
+
+## Key Learning Outcomes
+
+- Built and deployed my first full stack web application
+- Implemented JWT based authentication and protected routes
+- Designed REST APIs with FastAPI
+- Integrated OpenAI APIs into a production workflow
+- Managed relational data using PostgreSQL and SQLAlchemy
+- Deployed and debugged a cloud hosted application
 
 ## Project Architecture
 

@@ -1,3 +1,11 @@
+"""
+Audio analysis API routes.
+
+This module handles audio file uploads, validates incoming files,
+temporarily stores them on the server, and extracts audio features
+used to enhance AI generated marketing assets.
+"""
+
 import os
 import shutil
 from uuid import uuid4
@@ -11,9 +19,20 @@ router = APIRouter()
 
 @router.post("/api/analyze")
 async def analyze_audio(audio_file: UploadFile = File(...)):
+    """
+    Analyze an uploaded audio file and return extracted metadata.
+
+    Supported formats:
+    - MP3
+    - WAV
+
+    The uploaded file is temporarily stored on the server, analyzed,
+    and then deleted after processing completes.
+    """
     file_path = None
 
     try:
+        # Restrict uploads to supported audio formats.
         allowed_content_types = [
             "audio/mpeg",
             "audio/mp3",
@@ -28,6 +47,7 @@ async def analyze_audio(audio_file: UploadFile = File(...)):
                 detail="Only MP3 and WAV files are supported.",
             )
 
+        # Enforce a maximum upload size to prevent excessive resource usage.
         max_file_size_mb = 25
         max_file_size_bytes = max_file_size_mb * 1024 * 1024
 
@@ -41,13 +61,16 @@ async def analyze_audio(audio_file: UploadFile = File(...)):
                 detail=f"File is too large. Max size is {max_file_size_mb}MB.",
             )
 
+        # Create a temporary upload directory if it does not exist.
         upload_dir = "temp_uploads"
         os.makedirs(upload_dir, exist_ok=True)
 
+        # Generate a unique filename to avoid collisions between uploads.
         original_filename = audio_file.filename or "uploaded_audio"
         safe_filename = f"{uuid4()}_{original_filename}"
         file_path = os.path.join(upload_dir, safe_filename)
 
+        # Save the uploaded file for analysis.
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(audio_file.file, buffer)
 
@@ -57,12 +80,15 @@ async def analyze_audio(audio_file: UploadFile = File(...)):
         raise
 
     except Exception as error:
+        # Log unexpected processing errors and return a server error response.
         print("Audio analysis error:", repr(error))
+
         raise HTTPException(
             status_code=500,
             detail=f"Failed to analyze audio file: {str(error)}",
         )
 
     finally:
+        # Always remove temporary files after processing completes.
         if file_path and os.path.exists(file_path):
             os.remove(file_path)

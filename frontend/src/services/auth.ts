@@ -1,3 +1,10 @@
+/**
+ * Authentication API service.
+ *
+ * This module handles user registration, login, and retrieval of the
+ * currently authenticated user.
+ */
+
 type AuthCredentials = {
   email: string;
   password: string;
@@ -10,7 +17,17 @@ type AuthResponse = {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-async function getErrorMessage(response: Response, fallbackMessage: string) {
+/**
+ * Extract a user-friendly error message from an API response.
+ *
+ * FastAPI validation errors may be returned as either a string or an
+ * array of validation messages, so this helper normalizes them into
+ * a single message for display in the UI.
+ */
+async function getErrorMessage(
+  response: Response,
+  fallbackMessage: string
+) {
   try {
     const errorData = await response.json();
 
@@ -28,6 +45,9 @@ async function getErrorMessage(response: Response, fallbackMessage: string) {
   }
 }
 
+/**
+ * Register a new user account.
+ */
 export async function registerUser(
   credentials: AuthCredentials
 ): Promise<AuthResponse> {
@@ -51,6 +71,9 @@ export async function registerUser(
   return response.json();
 }
 
+/**
+ * Authenticate an existing user and return a JWT access token.
+ */
 export async function loginUser(
   credentials: AuthCredentials
 ): Promise<AuthResponse> {
@@ -74,6 +97,12 @@ export async function loginUser(
   return response.json();
 }
 
+/**
+ * Retrieve information about the currently authenticated user.
+ *
+ * The JWT stored in localStorage is included as a bearer token
+ * in the request authorization header.
+ */
 export async function getCurrentUser() {
   const token = localStorage.getItem("token");
 

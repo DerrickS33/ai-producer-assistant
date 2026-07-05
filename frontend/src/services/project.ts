@@ -1,3 +1,11 @@
+/**
+ * Project API service.
+ *
+ * This module handles CRUD operations for saved projects.
+ * All requests require authentication and are scoped to the
+ * currently logged in user.
+ */
+
 import type { MarketingKit } from "../types/marketingKit";
 import type { AudioAnalysis } from "../types/audioAnalysis";
 
@@ -13,6 +21,9 @@ type ProjectData = {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+/**
+ * Build authenticated request headers using the user's JWT.
+ */
 function getAuthHeaders() {
   const token = localStorage.getItem("token");
 
@@ -22,6 +33,9 @@ function getAuthHeaders() {
   };
 }
 
+/**
+ * Save a newly generated marketing project.
+ */
 export async function saveProject(projectData: ProjectData) {
   const response = await fetch(`${API_BASE_URL}/api/projects`, {
     method: "POST",
@@ -45,6 +59,9 @@ export async function saveProject(projectData: ProjectData) {
   return response.json();
 }
 
+/**
+ * Retrieve all projects belonging to the authenticated user.
+ */
 export async function getProjects() {
   const response = await fetch(`${API_BASE_URL}/api/projects`, {
     headers: getAuthHeaders(),
@@ -57,6 +74,9 @@ export async function getProjects() {
   return response.json();
 }
 
+/**
+ * Delete a saved project.
+ */
 export async function deleteProject(projectId: number) {
   const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
     method: "DELETE",
@@ -70,7 +90,14 @@ export async function deleteProject(projectId: number) {
   return response.json();
 }
 
-export async function updateProject(projectId: number, projectData: ProjectData) {
+/**
+ * Update an existing saved project with the latest form data,
+ * audio analysis results, and generated marketing assets.
+ */
+export async function updateProject(
+  projectId: number,
+  projectData: ProjectData
+) {
   const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
     method: "PUT",
     headers: getAuthHeaders(),

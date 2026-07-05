@@ -1,3 +1,11 @@
+"""
+Project management API routes.
+
+These endpoints allow authenticated users to create, retrieve, update,
+and delete saved marketing projects. Each project is associated with
+the user who created it and can only be accessed by that user.
+"""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -16,6 +24,9 @@ def create_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """
+    Create and save a new project for the authenticated user.
+    """
     project = Project(
         title=project_data.title,
         genre=project_data.genre,
@@ -43,6 +54,12 @@ def get_projects(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """
+    Retrieve all projects belonging to the authenticated user.
+
+    Projects are returned in descending order of creation date so that
+    the most recently saved projects appear first.
+    """
     projects = (
         db.query(Project)
         .filter(Project.user_id == current_user.id)
@@ -59,6 +76,9 @@ def delete_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """
+    Delete a project owned by the authenticated user.
+    """
     project = (
         db.query(Project)
         .filter(
@@ -84,6 +104,9 @@ def update_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """
+    Update an existing project owned by the authenticated user.
+    """
     project = (
         db.query(Project)
         .filter(
